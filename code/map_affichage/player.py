@@ -1,6 +1,6 @@
 import pygame
 
-from elcode import change
+
 from entity import Entity
 from keylistener import KeyListener
 from screen import Screen
