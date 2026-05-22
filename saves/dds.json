@@ -1,0 +1,15 @@
+{
+  "player_name": "dds",
+  "skin": "hero_01_red_m",
+  "map": "map_0",
+  "position": [
+    408,
+    432
+  ],
+  "highscores": {
+    "tetris": 0,
+    "pacman": 0,
+    "snake": 0,
+    "space": 0
+  }
+}

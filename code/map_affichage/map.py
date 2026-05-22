@@ -8,7 +8,7 @@ from change import Change
 
 
 class Map:
-    def __init__(self, screen: Screen):
+    def __init__(self, screen: Screen, initial_map: str = "map_0"):
         self.screen: Screen = screen
         self.tmx_data: pytmx.TiledMap | None = None
         self.map_layer: pyscroll.BufferedRenderer | None = None
@@ -18,14 +18,14 @@ class Map:
         self.change: list[Change] | None = None
         self.collisions: list[pygame.Rect] | None = None
 
-        self.current_map: Change = Change("switch", "map_0", pygame.Rect(0, 0, 0, 0), 0)
+        self.current_map: Change = Change("switch", initial_map, pygame.Rect(0, 0, 0, 0), 0)
         self.switch_map(self.current_map)
 
     # ═════════════════════════════════════════════════════════════════════════
 
     def switch_map(self, change: Change) -> None:
         self.tmx_data = pytmx.load_pygame(
-            f"C:/Users/natha/PycharmProjects/PythonProject1/assets/map/{change.name}.tmx"
+            f"assets/map/{change.name}.tmx"
         )
         map_data = pyscroll.data.TiledMapData(self.tmx_data)
         self.map_layer = pyscroll.BufferedRenderer(map_data, self.screen.get_size())

@@ -1,0 +1,15 @@
+{
+  "player_name": "nathan",
+  "skin": "hero_white_f",
+  "map": "map_0",
+  "position": [
+    520,
+    656
+  ],
+  "highscores": {
+    "tetris": 100,
+    "pacman": 0,
+    "snake": 0,
+    "space": 0
+  }
+}

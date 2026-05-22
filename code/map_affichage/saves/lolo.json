@@ -1,0 +1,15 @@
+{
+  "player_name": "lolo",
+  "skin": "hero_white_f",
+  "map": "map_0",
+  "position": [
+    472,
+    304
+  ],
+  "highscores": {
+    "tetris": 0,
+    "pacman": 0,
+    "snake": 0,
+    "space": 0
+  }
+}

@@ -11,9 +11,7 @@ class Player(Entity):
         super().__init__(keylistener, screen, x, y)
         self.pokedollars: int = 0
 
-        self.spritesheet_bike: pygame.image = pygame.image.load(
-            "C:/Users/natha/PycharmProjects/PythonProject1/assets/sprite/hero_01_white_f_cycle_wheel.png"
-        )
+        self.spritesheet_bike = pygame.image.load(getattr(Entity, "SKIN_BIKE", "assets/sprite/hero_01_white_f_cycle_wheel.png"))
 
         self.change: list[Change] | None = None
         self.collisions: list[pygame.Rect] | None = None

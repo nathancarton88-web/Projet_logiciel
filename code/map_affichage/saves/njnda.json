@@ -1,0 +1,15 @@
+{
+  "player_name": "njnda",
+  "skin": "hero_white_f",
+  "map": "map_0",
+  "position": [
+    512,
+    288
+  ],
+  "highscores": {
+    "tetris": 0,
+    "pacman": 0,
+    "snake": 0,
+    "space": 0
+  }
+}
