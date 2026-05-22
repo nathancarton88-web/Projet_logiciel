@@ -25,7 +25,7 @@ class Map:
 
     def switch_map(self, change: Change) -> None:
         self.tmx_data = pytmx.load_pygame(
-            f"C:/Users/natha/PycharmProjects/PokePoke/assets/map/{change.name}.tmx"
+            f"C:/Users/natha/PycharmProjects/PythonProject1/assets/map/{change.name}.tmx"
         )
         map_data = pyscroll.data.TiledMapData(self.tmx_data)
         self.map_layer = pyscroll.BufferedRenderer(map_data, self.screen.get_size())

@@ -12,7 +12,7 @@ class Player(Entity):
         self.pokedollars: int = 0
 
         self.spritesheet_bike: pygame.image = pygame.image.load(
-            "C:/Users/natha/PycharmProjects/PokePoke/assets/sprite/hero_01_white_f_cycle_wheel.png"
+            "C:/Users/natha/PycharmProjects/PythonProject1/assets/sprite/hero_01_white_f_cycle_wheel.png"
         )
 
         self.change: list[Change] | None = None
