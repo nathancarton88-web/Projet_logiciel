@@ -19,11 +19,14 @@ class Map:
         self.collisions: list[pygame.Rect] | None = None
 
         self.current_map: Change = Change("switch", "map_0", pygame.Rect(0, 0, 0, 0), 0)
-
         self.switch_map(self.current_map)
 
+    # ═════════════════════════════════════════════════════════════════════════
+
     def switch_map(self, change: Change) -> None:
-        self.tmx_data = pytmx.load_pygame(f"C:/Users/natha/PycharmProjects/PokePoke/assets/map/{change.name}.tmx")
+        self.tmx_data = pytmx.load_pygame(
+            f"C:/Users/natha/PycharmProjects/PokePoke/assets/map/{change.name}.tmx"
+        )
         map_data = pyscroll.data.TiledMapData(self.tmx_data)
         self.map_layer = pyscroll.BufferedRenderer(map_data, self.screen.get_size())
         self.group = pyscroll.PyscrollGroup(map_layer=self.map_layer, default_layer=7)
@@ -39,11 +42,29 @@ class Map:
         for obj in self.tmx_data.objects:
             if obj.name == "collision":
                 self.collisions.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
-            type = obj.name.split(" ")[0]
-            if type == "switch":
+                continue
+
+            parts = obj.name.split(" ")
+            obj_type = parts[0]
+
+            # ── Changement de carte (comportement existant) ────────────────────
+            if obj_type == "switch":
                 self.change.append(Change(
-                    type, obj.name.split(" ")[1], pygame.Rect(obj.x, obj.y, obj.width, obj.height),
-                    int(obj.name.split(" ")[-1])
+                    "switch",
+                    parts[1],
+                    pygame.Rect(obj.x, obj.y, obj.width, obj.height),
+                    int(parts[-1])
+                ))
+
+            # ── Porte vers un mini-jeu ─────────────────────────────────────────
+            # Convention TMX : nom de l'objet = "game tetris" / "game snake" / etc.
+            elif obj_type == "game" and len(parts) >= 2:
+                game_id = parts[1].lower()   # "tetris", "pacman", "snake", "space"
+                self.change.append(Change(
+                    "game",
+                    game_id,
+                    pygame.Rect(obj.x, obj.y, obj.width, obj.height),
+                    0
                 ))
 
         if self.player:
@@ -58,7 +79,9 @@ class Map:
 
         self.current_map = change
 
-    def add_player(self, player) -> None:
+    # ═════════════════════════════════════════════════════════════════════════
+
+    def add_player(self, player: Player) -> None:
         self.group.add(player)
         self.player = player
         self.player.align_hitbox()
@@ -67,6 +90,7 @@ class Map:
 
     def update(self) -> None:
         if self.player:
+            # Changement de carte classique (switch uniquement, pas game)
             if self.player.change_map and self.player.step >= 8:
                 self.switch_map(self.player.change_map)
                 self.player.change_map = None
@@ -74,6 +98,8 @@ class Map:
         self.group.center(self.player.rect.center)
         self.group.draw(self.screen.get_display())
 
-    def pose_player(self, change: Change):
-        position = self.tmx_data.get_object_by_name("spawn " + self.current_map.name + " " + str(change.port))
+    def pose_player(self, change: Change) -> None:
+        position = self.tmx_data.get_object_by_name(
+            "spawn " + self.current_map.name + " " + str(change.port)
+        )
         self.player.position = pygame.math.Vector2(position.x, position.y)

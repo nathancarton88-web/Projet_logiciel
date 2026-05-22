@@ -5,10 +5,6 @@ pygame.init()
 L_ECRAN, H_ECRAN   = 1000, 600
 L_INTERNE, H_INTERNE = 700, 500
 X_DEBUT, Y_DEBUT   = 150, 50
-screen = pygame.display.set_mode((L_ECRAN, H_ECRAN))
-pygame.display.set_caption("Le gaming c'est cool")
-clock = pygame.time.Clock()
-
 
 # les COULEURS
 NOIR_CHASSIS = (20, 20, 22);  ECRAN_OFF   = (5, 5, 10)

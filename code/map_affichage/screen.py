@@ -11,8 +11,6 @@ class Screen:
 
     def update(self) -> None:
         pygame.display.flip()
-        pygame.display.update()
-        self.clock.tick(self.framerate)
         self.display.fill((0, 0, 0))
         self.deltatime = self.clock.get_time()
 

@@ -5,9 +5,6 @@ pygame.init()
 L_ECRAN, H_ECRAN = 1000, 600  # Dimensions totales de la fenêtre Windows
 L_INTERNE, H_INTERNE = 700, 500  # Dimensions de la zone de jeu "active" à l'intérieur de la console
 X_DEBUT, Y_DEBUT = 150, 50  # Décalage pour centrer la zone de jeu
-screen = pygame.display.set_mode((L_ECRAN, H_ECRAN))  # Création de la surface d'affichage
-pygame.display.set_caption("Le gaming c'est cool")  # Titre de la fenêtre
-clock = pygame.time.Clock()  # Horloge pour contrôler les FPS (tours par seconde)
 
 
 NOIR_CHASSIS = (20, 20, 22)  # Couleur de la carrosserie de la console
