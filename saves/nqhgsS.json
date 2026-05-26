@@ -1,0 +1,15 @@
+{
+  "player_name": "nqhgsS",
+  "skin": "hero_red_m",
+  "map": "map_0",
+  "position": [
+    152,
+    864
+  ],
+  "highscores": {
+    "tetris": 0,
+    "pacman": 0,
+    "snake": 0,
+    "space": 0
+  }
+}

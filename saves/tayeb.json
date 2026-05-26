@@ -1,0 +1,15 @@
+{
+  "player_name": "tayeb",
+  "skin": "hero_red_m",
+  "map": "map_0",
+  "position": [
+    1496,
+    688
+  ],
+  "highscores": {
+    "tetris": 0,
+    "pacman": 70,
+    "snake": 20,
+    "space": 0
+  }
+}
