@@ -279,7 +279,7 @@ class Player(Entity):
         for i, opt in enumerate(self._menu_opts):
             selected = i == self.menu_sel
             col  = _JAUNE if selected else _GRIS
-            prefix = "▶ " if selected else "  "
+            prefix = "-> " if selected else "  "
             txt  = _f_mid.render(prefix + opt, True, col)
             if selected:
                 pygame.draw.rect(display, (30, 30, 55),
