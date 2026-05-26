@@ -17,6 +17,7 @@ class Map:
         self.player: Player | None = None
         self.change: list[Change] | None = None
         self.collisions: list[pygame.Rect] | None = None
+        self.water_zones = []
 
         self.current_map: Change = Change("switch", initial_map, pygame.Rect(0, 0, 0, 0), 0)
         self.switch_map(self.current_map)
@@ -66,6 +67,8 @@ class Map:
                     pygame.Rect(obj.x, obj.y, obj.width, obj.height),
                     0
                 ))
+            elif obj_type == "water":
+                self.water_zones.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
 
         if self.player:
             self.pose_player(change)
@@ -73,6 +76,7 @@ class Map:
             self.player.step = 16
             self.player.add_switchs(self.change)
             self.player.add_collisions(self.collisions)
+            self.player.add_water_zones(self.water_zones)
             self.group.add(self.player)
             if change.name.split("_")[0] != "map":
                 self.player.switch_bike(True)
@@ -87,6 +91,7 @@ class Map:
         self.player.align_hitbox()
         self.player.add_switchs(self.change)
         self.player.add_collisions(self.collisions)
+        self.player.add_water_zones(self.water_zones)
 
     def update(self) -> None:
         if self.player:
@@ -100,6 +105,6 @@ class Map:
 
     def pose_player(self, change: Change) -> None:
         position = self.tmx_data.get_object_by_name(
-            "spawn " + self.current_map.name + " " + str(change.port)
+            "spawn " + change.name + " " + str(change.port)
         )
         self.player.position = pygame.math.Vector2(position.x, position.y)

@@ -1,12 +1,3 @@
-"""
-main2.py — Point d'entrée du jeu fusionné.
-
-Ordre de démarrage :
-    1. pygame.init()
-    2. Menu principal  (choix du joueur / nouveau / skin)
-    3. Game.run()      (carte + mini-jeux)
-"""
-
 import pygame
 from menu import MainMenu
 from game import Game
@@ -15,22 +6,19 @@ from game import Game
 def main():
     pygame.init()
     pygame.mixer.init()
-
-    # Crée la fenêtre une seule fois (1280×720)
     screen = pygame.display.set_mode((1280, 720))
-    pygame.display.set_caption("Mon Jeu")
+    pygame.display.set_caption("l'ile des minis jeux")
 
-    # ── Menu ──────────────────────────────────────────────────────────────────
-    menu      = MainMenu(screen)
-    save_data = menu.run()          # bloque jusqu'au choix du joueur
-
-    if save_data is None:           # l'utilisateur a fermé la fenêtre
-        pygame.quit()
-        return
-
-    # ── Jeu ───────────────────────────────────────────────────────────────────
-    game = Game(save_data)
-    game.run()
+    # Boucle menu → jeu → menu (si retour volontaire)
+    while True:
+        menu      = MainMenu(screen)
+        save_data = menu.run()
+        if save_data is None:
+            break
+        game = Game(save_data)
+        game.run()
+        # Si game.run() retourne, c'est soit fermeture fenêtre soit retour menu
+        # → on repart au début de la boucle while
 
     pygame.quit()
 

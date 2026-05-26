@@ -26,20 +26,17 @@ SKINS = [
         "label": "Héroïne (blanc)",
         "walk":  "assets/sprite/hero_01_white_f_walk.png",
         "bike":  "assets/sprite/hero_01_white_f_cycle_wheel.png",
+        "run":   "assets/sprite/hero_01_white_f_run.png",
+        "surf":  "assets/sprite/hero_01_white_f_surf.png",
     },
     {
-        "id": "hero_01_red_m",
-        "label": "Héro rouge",
-        "walk": "assets/sprite/hero_01_red_m_walk.png",
-        "bike": "assets/sprite/hero_01_red_m_cycle_roll.png",
+        "id":    "hero_red_m",
+        "label": "Héros (rouge)",
+        "walk":  "assets/sprite/hero_01_red_m_walk.png",
+        "bike":  "assets/sprite/hero_01_red_m_bike.png",
+        "run":   "assets/sprite/hero_01_red_m_run.png",
+        "surf":  "assets/sprite/hero_01_red_m_surf.png",
     },
-    # Ajoute d'autres skins ici en dupliquant le bloc ci-dessus
-    # {
-    #     "id":    "hero_red_m",
-    #     "label": "Héros (rouge)",
-    #     "walk":  "assets/sprite/hero_01_red_m_walk.png",
-    #     "bike":  "assets/sprite/hero_01_red_m_cycle_wheel.png",
-    # },
 ]
 
 

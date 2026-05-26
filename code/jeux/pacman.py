@@ -128,5 +128,5 @@ class Pacman:
         if self.power_timer > 0:
             surf.blit(font_pixel.render(f"POWER:{self.power_timer//60+1}s", True, JAUNE), (200, 25))
         if self.game_over:
-            msg = font_main.render("GAME OVER – ESC", True, JOYCON_ROUGE)
+            msg = font_main.render("GAME OVER press ESC", True, JOYCON_ROUGE)
             surf.blit(msg, (150, 240))

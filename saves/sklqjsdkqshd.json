@@ -1,14 +1,14 @@
 {
-  "player_name": "njnda",
-  "skin": "hero_white_f",
+  "player_name": "sklqjsdkqshd",
+  "skin": "hero_red_m",
   "map": "map_0",
   "position": [
-    512,
-    288
+    1448,
+    594
   ],
   "highscores": {
     "tetris": 0,
-    "pacman": 0,
+    "pacman": 560,
     "snake": 0,
     "space": 0
   }
