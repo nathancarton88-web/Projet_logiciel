@@ -82,7 +82,7 @@ class Game:
         # ── Résoudre le skin ──────────────────────────────────────────────────
         skin = skin_by_id(save_data.get("skin", ""))
         # On injecte les chemins dans les classes Entity/Player via attributs de classe
-        # (évite de modifier leurs constructeurs)
+
         from entity import Entity
         Entity.SKIN_WALK = skin["walk"]
         Entity.SKIN_BIKE = skin["bike"]
@@ -212,7 +212,7 @@ class Game:
                 self._handle_game_input(event)
                 return
 
-            # ── Inputs carte (R, S, B, flèches…) ─────────────────────────────
+            # ── Inputs carte (R, S, B, flèche) ─────────────────────────────
             if self.state == "MAP":
                 # Touches toggle — gérées ici directement
                 if k == pygame.K_b:

@@ -1,0 +1,15 @@
+{
+  "player_name": "mamama",
+  "skin": "hero_white_f",
+  "map": "hermite_0",
+  "position": [
+    56,
+    96
+  ],
+  "highscores": {
+    "tetris": 0,
+    "pacman": 0,
+    "snake": 0,
+    "space": 0
+  }
+}

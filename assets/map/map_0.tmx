@@ -522,7 +522,7 @@
   <objectgroup id="30" name="jeux">
    <object id="813" name="game tetris" x="94" y="753.333" width="20" height="23.3333"/>
    <object id="815" name="game space" x="798.667" y="761" width="20" height="23.3333"/>
-   <object id="816" name="game pacman" x="1435.33" y="585.667" width="20" height="23.3333"/>
+   <object id="816" name="game pacman" x="1436.33" y="586.167" width="20" height="23.3333"/>
   </objectgroup>
   <objectgroup id="29" name="collisions" visible="0">
    <object id="681" name="collision" type="collision" x="81.5" y="913" width="6.66667" height="30.25"/>
@@ -836,19 +836,19 @@
    <object id="827" name="spawn map_0 5" x="1005" y="460">
     <point/>
    </object>
-   <object id="830" name="switch teepe_0 1" x="1517.5" y="62.5" width="20" height="16"/>
-   <object id="831" name="switch teepe_1 0" x="1409" y="63" width="20" height="16"/>
+   <object id="830" name="switch teepe_0 1" x="1519.5" y="58.5" width="20" height="16"/>
+   <object id="831" name="switch teepe_1 0" x="1407" y="59" width="20" height="16"/>
    <object id="832" name="spawn map_0 7" x="1410.5" y="80.5">
     <point/>
    </object>
    <object id="833" name="spawn map_0 6" x="1552" y="703.5">
     <point/>
    </object>
-   <object id="834" name="switch teepe_1 1" x="1552.5" y="687" width="20" height="16"/>
+   <object id="834" name="switch teepe_1 1" x="1551.5" y="681" width="20" height="16"/>
    <object id="835" name="spawn map_0 8" x="1363.5" y="253.5">
     <point/>
    </object>
-   <object id="836" name="switch hermite_0 1" x="1358.51" y="243.194" width="19.476" height="12.6115"/>
+   <object id="836" name="switch hermite_0 1" x="1359.51" y="237.694" width="19.476" height="12.6115"/>
    <object id="840" name="water" x="921" y="764" width="317" height="195"/>
    <object id="843" name="water" x="1235.5" y="769.5" width="261" height="180"/>
    <object id="844" name="water" x="1016" y="684.5" width="92.5" height="127"/>

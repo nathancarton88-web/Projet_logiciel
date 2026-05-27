@@ -60,11 +60,7 @@ class Entity(pygame.sprite.Sprite):
             return None
 
     def _build_images(self, sheet, cols, rows):
-        """
-        Découpe un spritesheet selon sa vraie taille.
-        cols = frames par direction, rows = nb de directions (3 ou 4)
-        Ordre : down, left, right, up
-        """
+
         dirs   = ["down", "left", "right", "up"]
         fw     = sheet.get_width()  // cols
         fh     = sheet.get_height() // rows

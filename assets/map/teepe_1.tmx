@@ -134,15 +134,15 @@
  <group id="16" name="object">
   <objectgroup id="35" name="jeux"/>
   <objectgroup id="17" name="interface">
-   <object id="46" name="switch map_0 6" x="335.864" y="256.63" width="32" height="16"/>
+   <object id="46" name="switch map_0 6" x="336.197" y="248.963" width="32" height="16"/>
    <object id="48" name="spawn teepe_1 0" x="416" y="400">
     <point/>
    </object>
-   <object id="90" name="switch map_0 7" x="418" y="400.667" width="32" height="16"/>
+   <object id="90" name="switch map_0 7" x="416" y="406.334" width="32" height="16"/>
    <object id="91" name="spawn teepe_1 1" x="341.333" y="273.333">
     <point/>
    </object>
-   <object id="92" name="switch hermite_0 0" x="416.386" y="256.972" width="32" height="16"/>
+   <object id="92" name="switch hermite_0 0" x="416.053" y="247.639" width="32" height="16"/>
    <object id="93" name="spawn teepe_1 2" x="420.342" y="274.607">
     <point/>
    </object>
@@ -151,8 +151,8 @@
    <object id="94" name="collision" type="collision" x="367.667" y="314.333" width="48" height="54"/>
    <object id="95" name="collision" type="collision" x="298.333" y="257.333" width="7" height="157.667"/>
    <object id="96" name="collision" type="collision" x="479.5" y="257.166" width="7" height="157.667"/>
-   <object id="97" name="collision" type="collision" x="306" y="410.333" width="112" height="7"/>
-   <object id="98" name="collision" type="collision" x="366" y="252.5" width="51.3333" height="7"/>
+   <object id="97" name="collision" type="collision" x="306" y="410.333" width="109" height="7"/>
+   <object id="98" name="collision" type="collision" x="369.333" y="252.5" width="48" height="7"/>
    <object id="99" name="collision" type="collision" x="450.333" y="254.167" width="51.3333" height="7"/>
    <object id="100" name="collision" type="collision" x="284" y="252.5" width="51.3333" height="7"/>
    <object id="101" name="collision" type="collision" x="450" y="411.167" width="51.3333" height="7"/>
