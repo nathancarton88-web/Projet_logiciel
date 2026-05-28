@@ -229,14 +229,14 @@ class Pacman:
                     pygame.draw.circle(surf, BLANC, (gcx + ox, gcy - 1), 3)
                     pygame.draw.circle(surf, BRUN, (gcx + ox, gcy - 1), 1)
             else:
-                # yeux de flipé en croix
+                # yeux en croix
                 for ox in (-3, 3):
                     pygame.draw.line(surf, BLANC,
                                      (gcx + ox - 2, gcy - 3), (gcx + ox + 2, gcy + 1), 1)
                     pygame.draw.line(surf, BLANC,
                                      (gcx + ox + 2, gcy - 3), (gcx + ox - 2, gcy + 1), 1)
 
-        # Ui 
+        # Ui
         draw_wood_panel(surf, (6, 6, 160, 26), radius=5)
         surf.blit(font_small.render(f"SCORE: {self.score}", True, BRUN), (12, 10))
 
