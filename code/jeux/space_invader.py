@@ -2,7 +2,6 @@
 
 
 
-
 import pygame, random, math
 
 # import du theme 
@@ -13,7 +12,7 @@ from jeux.ete_theme import (draw_game_bg, draw_wood_panel, draw_wave_line,
 
 pygame.init()
 
-
+# taille de l'ecran d'arcade 
 L_INTERNE, H_INTERNE = 700, 500
 
 try:
@@ -83,8 +82,7 @@ class SpaceInvaders:
         espace = (L_INTERNE - n * w_total) // (n + 1)  
         sy = self.py - 85 
 
-        # on balance tout les ptits carres dans une seule liste plate
-        # ca evite de faire 3 boucles for imbriquees pour les collisions 
+
         return [
             pygame.Rect(espace + i * (w_total + espace) + c * self.S_BLOC, sy + r * self.S_BLOC, self.S_BLOC, self.S_BLOC)
             for i in range(n) for r in range(self.LIG_BOUCLIER) for c in range(self.COL_BOUCLIER)
@@ -146,7 +144,7 @@ class SpaceInvaders:
             tireur = random.choice(self.mobs)  
             self.tirs_mobs.append(pygame.Rect(tireur['rect'].centerx - 2, tireur['rect'].bottom, 4, 8))
 
-        # le boss
+
         if self.boss:
             self.boss['rect'].x += self.dir_boss * 2
             if self.boss['rect'].left < 5 or self.boss['rect'].right > L_INTERNE - 5:
@@ -162,7 +160,7 @@ class SpaceInvaders:
                     self.tirs_mobs.append(pygame.Rect(bx + ox - 2, by, 4, 8))
 
 
-        # Collision
+
 
         # ce qu'on touche 
         for b in self.tirs_vaisseau[:]:
@@ -213,10 +211,10 @@ class SpaceInvaders:
             self.level += 1
             self.reset()
 
-    # Dessin
+
     
     def dessine_mob(self, surf, e):
-        # skin des mobs selon la ligne (meduse, crabe, poisson) enfin en theorie
+        # skin des mobs selon la ligne (meduse, crabe, poisson) en théorie mdr
         col = [ROSE, MER, VERT_PALM][e['type']]
         x, y, w, h = e['rect'].x, e['rect'].y, self.W_MOB, self.H_MOB
 
@@ -246,7 +244,7 @@ class SpaceInvaders:
         draw_game_bg(surf)
         draw_wave_line(surf, H_INTERNE - 50, t, color=(0, 160, 180), alpha=100)
 
-        # dessin des boucliers
+        # dessin des boucliers opti
         for bloc in self.bunkers:
             pygame.draw.rect(surf, SABLE, bloc, border_radius=2)
             pygame.draw.rect(surf, SABLE2, bloc, 1, border_radius=2)
@@ -276,17 +274,18 @@ class SpaceInvaders:
             draw_wood_panel(surf, (x + w // 2 - 22, y - 30, 44, 16), radius=4)
             surf.blit(font_small.render("BOSS", True, ROUGE_VIF), (x + w // 2 - 18, y - 28))
 
-        # notre super bateau en polygone
+        
+        # notre bateau super en polygone
         px, py2 = self.px, self.py
         pygame.draw.polygon(surf, BOIS, [
-            (px, py2 + self.PH), (px + self.PW, py2 + self.PH),
-            (px + self.PW - 4, py2 + self.PH - 10), (px + 4, py2 + self.PH - 10)
+            (px, py2 + self.H_JOUEUR), (px + self.W_JOUEUR, py2 + self.H_JOUEUR),
+            (px + self.W_JOUEUR - 4, py2 + self.H_JOUEUR - 10), (px + 4, py2 + self.H_JOUEUR - 10)
         ])
         pygame.draw.polygon(surf, SABLE, [
-            (px + self.PW // 2, py2), (px + self.PW // 2 - 8, py2 + self.PH - 12),
-            (px + self.PW // 2 + 8, py2 + self.PH - 12)
+            (px + self.W_JOUEUR // 2, py2), (px + self.W_JOUEUR // 2 - 8, py2 + self.H_JOUEUR - 12),
+            (px + self.W_JOUEUR // 2 + 8, py2 + self.H_JOUEUR - 12)
         ])
-        pygame.draw.rect(surf, BOIS_FONC, (px + self.PW // 2 - 2, py2 + self.PH - 12, 4, 12))
+        pygame.draw.rect(surf, BOIS_FONC, (px + self.W_JOUEUR // 2 - 2, py2 + self.H_JOUEUR - 12, 4, 12))
 
         # FX tirs
         for b in self.tirs_vaisseau:

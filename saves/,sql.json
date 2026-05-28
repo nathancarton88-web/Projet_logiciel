@@ -1,0 +1,15 @@
+{
+  "player_name": ",sql",
+  "skin": "hero_red_m",
+  "map": "map_0",
+  "position": [
+    1016,
+    48
+  ],
+  "highscores": {
+    "tetris": 0,
+    "pacman": 0,
+    "snake": 0,
+    "space": 0
+  }
+}

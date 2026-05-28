@@ -3,13 +3,13 @@
   "skin": "hero_white_f",
   "map": "map_0",
   "position": [
-    1447,
-    592
+    1448,
+    656
   ],
   "highscores": {
-    "tetris": 0,
-    "pacman": 0,
-    "snake": 0,
-    "space": 0
+    "tetris": 200,
+    "pacman": 180,
+    "snake": 750,
+    "space": 60
   }
 }
