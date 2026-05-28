@@ -1,13 +1,5 @@
-"""
-game.py  (version fusionnée)
-────────────────────────────
-Machine à états :
-    MAP       → balade sur la carte TMX
-    FADE_IN   → fondu noir vers le mini-jeu
-    GAME      → mini-jeu actif
-    FADE_OUT  → fondu noir pour quitter le mini-jeu
-    FADE_BACK → fondu retour vers la carte
-"""
+# game.py
+# Fichier principal boucle de jeu
 
 import pygame
 from keylistener import KeyListener
@@ -22,167 +14,159 @@ from save_manager import write_save, skin_by_id
 from entity import Entity, MODE_WALK, MODE_BIKE, MODE_RUN, MODE_SURF
 import json, os
 
-# ── Constantes affichage mini-jeux ────────────────────────────────────────────
+# tailles de la fenetre arcade
 GW, GH = 700, 500
+# position  pour centrer
 GX, GY = 290, 110
 
 BLANC = (255, 255, 255)
-CYAN  = (0, 255, 255)
-GRIS  = (100, 100, 120)
+CYAN = (0, 255, 255)
+GRIS = (100, 100, 120)
 
 try:
-    font_ui  = pygame.font.SysFont("Segoe UI", 26, bold=True)
+    # police windows de base
+    font_ui = pygame.font.SysFont("Segoe UI", 26, bold=True)
     font_hud = pygame.font.SysFont("Consolas", 20)
-except Exception:
-    font_ui  = pygame.font.Font(None, 30)
+except Exception as e:
+    print("erreur font:", e)  # debug au cas ou ca crash
+    font_ui = pygame.font.Font(None, 30)
     font_hud = pygame.font.Font(None, 22)
 
-# ── Registre des mini-jeux ────────────────────────────────────────────────────
-GAME_REGISTRY = {
-    "tetris": {"class": Tetris,        "label": "Tetris Forever",  "color": (130,  0, 255)},
-    "pacman": {"class": Pacman,        "label": "Pac-Man Neon",    "color": (255, 215,   0)},
-    "snake":  {"class": SnakeNeon,     "label": "Snake Neon",      "color": (  0, 170,  80)},
-    "space":  {"class": SpaceInvaders, "label": "Space Invaders",  "color": ( 35,  80, 200)},
+# dico des mini jeux
+REGISTRE_JEUX = {
+    "tetris": {"class": Tetris, "label": "Tetris au soleil", "color": (130, 0, 255)},
+    "pacman": {"class": Pacman, "label": "Pac-Man a la playa", "color": (255, 215, 0)},
+    "snake": {"class": SnakeNeon, "label": "Snake de plage", "color": (0, 170, 80)},
+    "space": {"class": SpaceInvaders, "label": "Plage invaders", "color": (35, 80, 200)},
 }
+
+# liste des jeux qui ont besoin du dt (delta time) pour pas tourner a 2000 fps
 NEEDS_DT = {"tetris", "snake", "space"}
 
-# ── Musiques ──────────────────────────────────────────────────────────────────
-MUSIC = {
-    "map":    "assets/music/map.ogg",      # musique de la carte
-    "tetris": "assets/music/tetris.ogg",   # musique pendant Tetris
+ZIK = {
+    "map": "assets/music/map.ogg",
+    "tetris": "assets/music/tetris.ogg",
     "pacman": "assets/music/pacman.ogg",
-    "snake":  "assets/music/snake.ogg",
-    "space":  "assets/music/space.ogg",
+    "snake": "assets/music/snake.ogg",
+    "space": "assets/music/space.ogg",
 }
 
 
-def _play_music(key: str, volume: float = 0.4):
-    path = MUSIC.get(key, MUSIC.get("map", ""))
+def play_music(cle, vol=0.4):
+    # charge la zik sans faire planter le script si le son manque
+    chemin = ZIK.get(cle, ZIK.get("map", ""))
     try:
-        if path and os.path.exists(path):
-            pygame.mixer.music.load(path)
-            pygame.mixer.music.set_volume(volume)
-            pygame.mixer.music.play(-1)
+        if chemin and os.path.exists(chemin):
+            pygame.mixer.music.load(chemin)
+            pygame.mixer.music.set_volume(vol)
+            pygame.mixer.music.play(-1)  # tourne en boucle
         else:
             pygame.mixer.music.stop()
     except Exception as e:
-        print(f"[game] Musique '{key}' non chargée : {e}")
+        print("bug son: ", e)
 
 
 class Game:
-    def __init__(self, save_data: dict):
+    def __init__(self, data_sauvegarde: dict):
         pygame.init()
         pygame.mixer.init()
 
-        self.save_data = save_data          # dict complet de la sauvegarde
-
-        # ── Écran ─────────────────────────────────────────────────────────────
+        self.save_data = data_sauvegarde
         self.screen = Screen()
 
-        # ── Résoudre le skin ──────────────────────────────────────────────────
-        skin = skin_by_id(save_data.get("skin", ""))
-        # On injecte les chemins dans les classes Entity/Player via attributs de classe
+        # recup du skin depuis le json
+        skin = skin_by_id(self.save_data.get("skin", ""))
 
+        # bidouille pour ecraser les variables de la classe Entity direct
         from entity import Entity
         Entity.SKIN_WALK = skin["walk"]
         Entity.SKIN_BIKE = skin["bike"]
         Entity.SKIN_RUN = skin["run"]
         Entity.SKIN_SURF = skin["surf"]
 
-        # ── Carte & joueur ────────────────────────────────────────────────────
-        px, py   = save_data.get("position", [512, 288])
-        map_name = save_data.get("map",      "map_0")
+        # setup du player et map
+        px, py = self.save_data.get("position", [512, 288])  # valeurs par defaut si 1ere game
+        nom_map = self.save_data.get("map", "map_0")
 
         self.keylistener = KeyListener()
-        self.player      = Player(self.keylistener, self.screen, px, py)
-        self.map         = Map(self.screen, initial_map=map_name)
+        self.player = Player(self.keylistener, self.screen, px, py)
+        self.map = Map(self.screen, map_depart=nom_map)
         self.map.add_player(self.player)
 
-        # ── État ──────────────────────────────────────────────────────────────
-        self.state      = "MAP"
-        self.fade_alpha = 0
-        self.fade_speed = 12
+        # machine a etat qui marche lol
+        self.etat = "MAP"
+        self.alpha_fondu = 0
+        self.vitesse_fondu = 12
 
-        # ── Mini-jeu ──────────────────────────────────────────────────────────
-        self.current_game    = None
-        self.current_game_id = None
+        self.jeu_actuel = None
+        self.id_jeu_actuel = None
 
-        # ── Prompt E ─────────────────────────────────────────────────────────
+        # fx bouton E
         self.prompt_alpha = 0
-        self.prompt_dir   = 1
+        self.prompt_dir = 1
 
-        # ── Musique carte ─────────────────────────────────────────────────────
-        _play_music("map")
+        play_music("map")
 
-        # ── Sauvegarde auto toutes les 30 s ───────────────────────────────────
-        self._autosave_timer = 0
+        self.timer_save = 0
+        self.quit_to_menu = False
 
-        # ── Flag retour menu principal ────────────────────────────────────────
-        self._return_to_main_menu = False
-
-    # ══════════════════════════════════════════════════════════════════════════
-    # Boucle principale
-    # ══════════════════════════════════════════════════════════════════════════
-    def run(self) -> None:
+    def run(self):
+        # BOUCLE PRINCIPALE
         while True:
-            dt = self.screen.clock.tick(60)
+            dt = self.screen.clock.tick(60)  # cap a 60 fps
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self._save_position()
+            for ev in pygame.event.get():
+                if ev.type == pygame.QUIT:
+                    self.save_pos()
                     pygame.quit()
                     return
-                self._handle_event(event)
+                self.check_inputs(ev)
 
-            self._update(dt)
-            self._draw()
+            self.update_logic(dt)
+            self.draw_frame()
             self.screen.update()
 
-            if self._return_to_main_menu:
-                return  # remonte dans main2.py qui relancera le menu
+            if self.quit_to_menu:
+                return
 
-            # Auto-save toutes les 30 secondes
-            self._autosave_timer += dt
-            if self._autosave_timer >= 30_000:
-                self._autosave_timer = 0
-                self._save_position()
+            # autosave toutes les 30 sec environ
+            self.timer_save += dt
+            if self.timer_save >= 30000:
+                self.timer_save = 0
+                self.save_pos()
+                # print("autosave ok")
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # Sauvegarde
-    # ══════════════════════════════════════════════════════════════════════════
-    def _save_position(self):
-        """Met à jour position + map dans save_data puis écrit sur disque."""
-        pos  = [int(self.player.position.x), int(self.player.position.y)]
-        mmap = self.map.current_map.name if self.map.current_map else "map_0"
-        self.save_data["position"]   = pos
-        self.save_data["map"]        = mmap
+    def save_pos(self):
+        # cast en int() pour eviter les float bizarres dans le json
+        pos = [int(self.player.position.x), int(self.player.position.y)]
+
+        m = self.map.map_actuelle.name if self.map.map_actuelle else "map_0"
+        self.save_data["position"] = pos
+        self.save_data["map"] = m
         self.save_data["highscores"] = self.save_data.get("highscores", {})
         write_save(self.save_data)
 
-    def _update_highscore(self, game_id: str, score: int):
+    def set_highscore(self, id_jeu, score):
         hs = self.save_data.setdefault("highscores", {})
-        if score > hs.get(game_id, 0):
-            hs[game_id] = score
+        if score > hs.get(id_jeu, 0):
+            hs[id_jeu] = score
             write_save(self.save_data)
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # Événements
-    # ══════════════════════════════════════════════════════════════════════════
-    def _handle_event(self, event) -> None:
-        if event.type == pygame.KEYDOWN:
-            k = event.key
+    def check_inputs(self, ev):
+        # tout ce qui est touches clavier
+        if ev.type == pygame.KEYDOWN:
+            k = ev.key
 
-            # ── Menu ingame (touche M ou START) ───────────────────────────────
-            if self.state == "MAP" and k == pygame.K_m:
-                if self.player.show_menu:
+            if self.etat == "MAP" and k == pygame.K_m:
+                if self.player.menu_ouvert:
                     self.player.close_menu()
                 else:
-                    self.player._highscores = self.save_data.get("highscores", {})
+                    self.player.highscores = self.save_data.get("highscores", {})
                     self.player.open_menu()
                 return
 
-            # Navigation dans le menu ingame
-            if self.state == "MAP" and self.player.show_menu:
+            # nav menu
+            if self.etat == "MAP" and self.player.menu_ouvert:
                 if k == pygame.K_ESCAPE:
                     self.player.close_menu()
                 elif k == pygame.K_UP:
@@ -190,31 +174,27 @@ class Game:
                 elif k == pygame.K_DOWN:
                     self.player.menu_down()
                 elif k == pygame.K_RETURN:
-                    action = self.player.menu_confirm()
-                    if action == "quit_menu":
-                        self._save_position()
-                        self._return_to_main_menu = True
+                    act = self.player.menu_confirm()
+                    if act == "quit_menu":
+                        self.save_pos()
+                        self.quit_to_menu = True
                 return
 
-            # ── Mini-jeu : Échap ──────────────────────────────────────────────
-            if self.state == "GAME" and k == pygame.K_ESCAPE:
-                self._start_fade_out()
+            if self.etat == "GAME" and k == pygame.K_ESCAPE:
+                self.start_fade_out()
                 return
 
-            # ── Entrer dans un jeu : E ────────────────────────────────────────
-            if self.state == "MAP" and k == pygame.K_e:
-                if self.player.nearby_game:
-                    self._start_fade_in(self.player.nearby_game)
+            if self.etat == "MAP" and k == pygame.K_e:
+                if self.player.jeu_proche:
+                    self.start_fade_in(self.player.jeu_proche)
                 return
 
-            # ── Inputs mini-jeu ───────────────────────────────────────────────
-            if self.state == "GAME":
-                self._handle_game_input(event)
+            if self.etat == "GAME":
+                self.input_minijeux(ev)
                 return
 
-            # ── Inputs carte (R, S, B, flèche) ─────────────────────────────
-            if self.state == "MAP":
-                # Touches toggle — gérées ici directement
+            # deplacement sur map
+            if self.etat == "MAP":
                 if k == pygame.K_b:
                     if self.player.mode == MODE_BIKE:
                         self.player.switch_walk()
@@ -228,172 +208,170 @@ class Game:
                 elif k == pygame.K_s:
                     if self.player.mode == MODE_SURF:
                         self.player.switch_walk()
-                    elif self.player._on_water:
+                    elif self.player.est_sur_eau:
                         self.player.switch_surf()
                 else:
-                    self.keylistener.add_key(k)  # flèches et autres touches maintenues
+                    self.keylistener.add_key(k)
 
-        elif event.type == pygame.KEYUP:
-            if self.state == "MAP":
-                self.keylistener.remove_key(event.key)
+        elif ev.type == pygame.KEYUP:
+            if self.etat == "MAP":
+                self.keylistener.remove_key(ev.key)
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # Mise à jour
-    # ══════════════════════════════════════════════════════════════════════════
-    def _update(self, dt: int) -> None:
-
-        if self.state == "MAP":
+    def update_logic(self, dt):
+        if self.etat == "MAP":
             self.map.update()
-            if self.player.nearby_game:
+
+            # anim du bouton E
+            if self.player.jeu_proche:
                 self.prompt_alpha = min(255, self.prompt_alpha + self.prompt_dir * 4)
                 if self.prompt_alpha >= 255 or self.prompt_alpha <= 0:
                     self.prompt_dir *= -1
             else:
                 self.prompt_alpha = 0
 
-        elif self.state == "FADE_IN":
-            self.fade_alpha = min(255, self.fade_alpha + self.fade_speed)
-            if self.fade_alpha >= 255:
-                self._launch_game(self._pending_game_id)
-                self.state = "GAME"
+        elif self.etat == "FADE_IN":
+            self.alpha_fondu = min(255, self.alpha_fondu + self.vitesse_fondu)
+            if self.alpha_fondu >= 255:
+                self.launch_game(self.jeu_en_attente)
+                self.etat = "GAME"
 
-        elif self.state == "GAME":
-            g = self.current_game
+        elif self.etat == "GAME":
+            g = self.jeu_actuel
             if g:
-                if self.current_game_id in NEEDS_DT:
+                if self.id_jeu_actuel in NEEDS_DT:
                     g.update(dt)
                 else:
                     g.update()
+
                 if g.game_over:
-                    self._update_highscore(self.current_game_id, g.score)
+                    self.set_highscore(self.id_jeu_actuel, g.score)
 
-        elif self.state == "FADE_OUT":
-            self.fade_alpha = min(255, self.fade_alpha + self.fade_speed)
-            if self.fade_alpha >= 255:
-                self.current_game    = None
-                self.current_game_id = None
-                self.state      = "FADE_BACK"
-                self.fade_alpha = 255
-                _play_music("map")      # ← reprend la musique de la carte
+        elif self.etat == "FADE_OUT":
+            self.alpha_fondu = min(255, self.alpha_fondu + self.vitesse_fondu)
+            if self.alpha_fondu >= 255:
+                self.jeu_actuel = None
+                self.id_jeu_actuel = None
+                self.etat = "FADE_BACK"
+                self.alpha_fondu = 255
+                play_music("map")
 
-        elif self.state == "FADE_BACK":
-            self.fade_alpha = max(0, self.fade_alpha - self.fade_speed)
-            if self.fade_alpha <= 0:
-                self.state = "MAP"
-                self._save_position()   # ← sauvegarde à chaque retour sur la carte
+        elif self.etat == "FADE_BACK":
+            self.alpha_fondu = max(0, self.alpha_fondu - self.vitesse_fondu)
+            if self.alpha_fondu <= 0:
+                self.etat = "MAP"
+                self.save_pos()
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # Rendu
-    # ══════════════════════════════════════════════════════════════════════════
-    def _draw(self) -> None:
-        display = self.screen.get_display()
+    def draw_frame(self):
+        disp = self.screen.get_display()
 
-        if self.state in ("MAP", "FADE_IN", "FADE_BACK"):
-            if self.state != "MAP":
+        if self.etat in ("MAP", "FADE_IN", "FADE_BACK"):
+            if self.etat != "MAP":
                 self.map.update()
-            if self.state == "MAP" and self.player.nearby_game:
-                self._draw_prompt(display)
-            # Menu ingame
-            if self.state == "MAP" and self.player.show_menu:
-                self.player.draw_ingame_menu(display,
-                    self.save_data.get("highscores", {}))
-            if self.state in ("FADE_IN", "FADE_BACK"):
-                ov = pygame.Surface(display.get_size(), pygame.SRCALPHA)
-                ov.fill((0, 0, 0, self.fade_alpha))
-                display.blit(ov, (0, 0))
 
-        elif self.state in ("GAME", "FADE_OUT"):
-            inner = pygame.Surface((GW, GH))
-            inner.fill((5, 5, 10))
-            if self.current_game:
-                self.current_game.draw(inner)
+            if self.etat == "MAP" and self.player.jeu_proche:
+                self.draw_bouton_e(disp)
 
-            display.fill((15, 15, 20))
-            pygame.draw.rect(display, (40, 40, 50),
+            if self.etat == "MAP" and self.player.menu_ouvert:
+                self.player.draw_ingame_menu(disp, self.save_data.get("highscores", {}))
+
+            if self.etat in ("FADE_IN", "FADE_BACK"):
+                calque = pygame.Surface(disp.get_size(), pygame.SRCALPHA)
+                calque.fill((0, 0, 0, self.alpha_fondu))
+                disp.blit(calque, (0, 0))
+
+        elif self.etat in ("GAME", "FADE_OUT"):
+            ecran_jeu = pygame.Surface((GW, GH))
+            ecran_jeu.fill((5, 5, 10))
+            if self.jeu_actuel:
+                self.jeu_actuel.draw(ecran_jeu)
+
+            disp.fill((15, 15, 20))
+            # contour de la borne
+            pygame.draw.rect(disp, (40, 40, 50),
                              (GX - 4, GY - 4, GW + 8, GH + 8), border_radius=6)
-            display.blit(inner, (GX, GY))
+            disp.blit(ecran_jeu, (GX, GY))
 
-            if self.current_game_id in GAME_REGISTRY:
-                info = GAME_REGISTRY[self.current_game_id]
-                lbl  = font_ui.render(info["label"], True, info["color"])
-                display.blit(lbl, (GX, GY - 36))
-                hs   = self.save_data.get("highscores", {}).get(self.current_game_id, 0)
-                hs_t = font_hud.render(f"BEST : {hs}", True, (200, 200, 100))
-                display.blit(hs_t, (GX + GW - hs_t.get_width(), GY - 30))
-                esc_t = font_hud.render("[ Echap ] Retour à la carte", True, GRIS)
-                display.blit(esc_t, (GX, GY + GH + 8))
-                # Nom du joueur
-                pn = font_hud.render(
-                    f"Joueur : {self.save_data.get('player_name', '?')}", True, GRIS)
-                display.blit(pn, (GX, GY + GH + 28))
+            # UI
+            if self.id_jeu_actuel in REGISTRE_JEUX:
+                info = REGISTRE_JEUX[self.id_jeu_actuel]
 
-            if self.state == "FADE_OUT":
-                ov = pygame.Surface((GW, GH), pygame.SRCALPHA)
-                ov.fill((0, 0, 0, self.fade_alpha))
-                display.blit(ov, (GX, GY))
+                titre = font_ui.render(info["label"], True, info["color"])
+                disp.blit(titre, (GX, GY - 36))
 
-    def _draw_prompt(self, display) -> None:
-        txt  = font_hud.render("[ E ]  pour Jouer", True, BLANC)
-        surf = pygame.Surface((txt.get_width() + 16, txt.get_height() + 10), pygame.SRCALPHA)
-        safe_alpha = max(0, min(255, int(self.prompt_alpha)))
+                hs = self.save_data.get("highscores", {}).get(self.id_jeu_actuel, 0)
+                txt_hs = font_hud.render(f"BEST : {hs}", True, (200, 200, 100))
+                disp.blit(txt_hs, (GX + GW - txt_hs.get_width(), GY - 30))
 
-        surf.fill((20, 20, 30, safe_alpha))
-        surf.blit(txt, (8, 5))
-        display.blit(surf, (self.screen.get_size()[0] // 2 - surf.get_width() // 2, 20))
+                txt_esc = font_hud.render("[ Echap ] Retour a la carte", True, GRIS)
+                disp.blit(txt_esc, (GX, GY + GH + 8))
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # Transitions
-    # ══════════════════════════════════════════════════════════════════════════
-    def _start_fade_in(self, game_id: str) -> None:
-        self._pending_game_id = game_id
-        self.fade_alpha = 0
-        self.state = "FADE_IN"
-        self.keylistener.clear()
+                pseudo = self.save_data.get('player_name', 'Joueur')
+                txt_joueur = font_hud.render(f"Joueur : {pseudo}", True, GRIS)
+                disp.blit(txt_joueur, (GX, GY + GH + 28))
 
-    def _start_fade_out(self) -> None:
-        self.fade_alpha = 0
-        self.state = "FADE_OUT"
+            if self.etat == "FADE_OUT":
+                calque = pygame.Surface((GW, GH), pygame.SRCALPHA)
+                calque.fill((0, 0, 0, self.alpha_fondu))
+                disp.blit(calque, (GX, GY))
 
-    def _launch_game(self, game_id: str) -> None:
-        info = GAME_REGISTRY.get(game_id)
+    def draw_bouton_e(self, disp):
+        txt = font_hud.render("[ E ]  pour Jouer", True, BLANC)
+        # on rajoute un peu de marge autour du texte (+16 et +10)
+        s = pygame.Surface((txt.get_width() + 16, txt.get_height() + 10), pygame.SRCALPHA)
+        alpha_safe = max(0, min(255, int(self.prompt_alpha)))
+
+        s.fill((20, 20, 30, alpha_safe))
+        s.blit(txt, (8, 5))
+        disp.blit(s, (self.screen.get_size()[0] // 2 - s.get_width() // 2, 20))
+
+    def start_fade_in(self, id_jeu):
+        self.jeu_en_attente = id_jeu
+        self.alpha_fondu = 0
+        self.etat = "FADE_IN"
+        self.keylistener.clear()  # vide buffer pour pas bouger tout seul apres
+
+    def start_fade_out(self):
+        self.alpha_fondu = 0
+        self.etat = "FADE_OUT"
+
+    def launch_game(self, id_jeu):
+        info = REGISTRE_JEUX.get(id_jeu)
         if not info:
-            self.state = "MAP"
+            self.etat = "MAP"  # si y'a un typo dans la TMX on annule
             return
-        self.current_game    = info["class"]()
-        self.current_game_id = game_id
-        _play_music(game_id)            # ← musique spécifique au jeu
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # Inputs mini-jeux
-    # ══════════════════════════════════════════════════════════════════════════
-    def _handle_game_input(self, event) -> None:
-        g   = self.current_game
-        gid = self.current_game_id
-        if not g or not gid:
-            return
+        self.jeu_actuel = info["class"]()
+        self.id_jeu_actuel = id_jeu
+        play_music(id_jeu)
+
+    def input_minijeux(self, ev):
+        # des inputs mais ca fait le taff
+        g = self.jeu_actuel
+        gid = self.id_jeu_actuel
+        if not g or not gid: return
 
         if gid == "tetris":
-            t = g
-            if event.key == pygame.K_LEFT  and not t.collide(dx=-1): t.cur['x'] -= 1
-            if event.key == pygame.K_RIGHT and not t.collide(dx=1):  t.cur['x'] += 1
-            if event.key == pygame.K_DOWN  and not t.collide(dy=1):  t.cur['y'] += 1
-            if event.key == pygame.K_UP:
-                rot = t.rotate(t.cur['shape'])
-                if not t.collide(shape=rot): t.cur['shape'] = rot
-            if event.key == pygame.K_SPACE:
-                t.cur['y'] = t.ghost_y(); t._lock()
+            if ev.key == pygame.K_LEFT and not g.collide(dx=-1): g.cur['x'] -= 1
+            if ev.key == pygame.K_RIGHT and not g.collide(dx=1):  g.cur['x'] += 1
+            if ev.key == pygame.K_DOWN and not g.collide(dy=1):  g.cur['y'] += 1
+            if ev.key == pygame.K_UP:
+                r = g.rotate(g.cur['shape'])
+                if not g.collide(shape=r): g.cur['shape'] = r
+            if ev.key == pygame.K_SPACE:
+                g.cur['y'] = g.ghost_y()
+                g._lock()
 
         elif gid == "pacman":
-            if event.key == pygame.K_UP:    g.next_dir = [0, -1]
-            if event.key == pygame.K_DOWN:  g.next_dir = [0,  1]
-            if event.key == pygame.K_LEFT:  g.next_dir = [-1,  0]
-            if event.key == pygame.K_RIGHT: g.next_dir = [1,   0]
+            if ev.key == pygame.K_UP:    g.next_dir = [0, -1]
+            if ev.key == pygame.K_DOWN:  g.next_dir = [0, 1]
+            if ev.key == pygame.K_LEFT:  g.next_dir = [-1, 0]
+            if ev.key == pygame.K_RIGHT: g.next_dir = [1, 0]
 
         elif gid == "snake":
-            if event.key == pygame.K_UP:    g.set_dir((0, -1))
-            if event.key == pygame.K_DOWN:  g.set_dir((0,  1))
-            if event.key == pygame.K_LEFT:  g.set_dir((-1,  0))
-            if event.key == pygame.K_RIGHT: g.set_dir((1,   0))
+            if ev.key == pygame.K_UP:    g.set_dir((0, -1))
+            if ev.key == pygame.K_DOWN:  g.set_dir((0, 1))
+            if ev.key == pygame.K_LEFT:  g.set_dir((-1, 0))
+            if ev.key == pygame.K_RIGHT: g.set_dir((1, 0))
 
         elif gid == "space":
-            if event.key == pygame.K_SPACE: g.shoot()
+            if ev.key == pygame.K_SPACE: g.shoot()

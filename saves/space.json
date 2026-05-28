@@ -1,10 +1,10 @@
 {
-  "player_name": "mamama",
+  "player_name": "space",
   "skin": "hero_white_f",
-  "map": "hermite_0",
+  "map": "map_0",
   "position": [
-    56,
-    96
+    808,
+    768
   ],
   "highscores": {
     "tetris": 0,

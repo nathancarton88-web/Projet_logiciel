@@ -1,179 +1,220 @@
-import pygame, random
-
-
+import pygame, random, math
+from jeux.ete_theme import (draw_game_bg, draw_wood_panel, draw_wave_line,
+                            draw_game_over, BLANC, BRUN, BRUN2, MER, SABLE,
+                            SOLEIL, ORANGE, ROUGE_VIF, VERT_PALM, ROSE, JAUNE_VIF)
 
 pygame.init()
-L_ECRAN, H_ECRAN   = 1000, 600
 L_INTERNE, H_INTERNE = 700, 500
-X_DEBUT, Y_DEBUT   = 150, 50
-
-
-
-NOIR_CHASSIS = (20, 20, 22);  ECRAN_OFF   = (5, 5, 10)
-JOYCON_BLEU  = (0, 190, 230); JOYCON_ROUGE= (255, 60, 50)
-BLANC = (255, 255, 255);      CYAN  = (0, 255, 255)
-JAUNE = (255, 230, 0);        VERT  = (50, 255, 80)
-GRIS_BOUTON = (50, 50, 55)
 
 
 try:
-    font_sys   = pygame.font.SysFont("Segoe UI", 22, bold=True)
-    font_main  = pygame.font.SysFont("Segoe UI", 35, bold=True)
-    font_pixel = pygame.font.SysFont("Consolas", 20)
-    font_large = pygame.font.SysFont("Segoe UI", 55, bold=True)
+    font_pixel = pygame.font.SysFont("Courier New", 17, bold=True)
+    font_main = pygame.font.SysFont("Courier New", 32, bold=True)
+    font_small = pygame.font.SysFont("Courier New", 13)
 except Exception:
-    font_sys   = pygame.font.Font(None, 24)
-    font_main  = pygame.font.Font(None, 40)
     font_pixel = pygame.font.Font(None, 20)
-    font_large = pygame.font.Font(None, 65)
+    font_main = pygame.font.Font(None, 36)
+    font_small = pygame.font.Font(None, 16)
+
 
 class Tetris:
-    # Définition des 7 formes (Tetriminos) sous forme de matrices (listes de listes)
+    # matrice des pieces
     SHAPES = [
-        [[1, 1, 1, 1]],  # I
-        [[1, 1], [1, 1]],  # O
-        [[0, 1, 0], [1, 1, 1]],  # T
-        [[0, 1, 1], [1, 1, 0]],  # S
-        [[1, 1, 0], [0, 1, 1]],  # Z
-        [[1, 0, 0], [1, 1, 1]],  # J
-        [[0, 0, 1], [1, 1, 1]],  # L
+        [[1, 1, 1, 1]],
+        [[1, 1], [1, 1]],
+        [[0, 1, 0], [1, 1, 1]],
+        [[0, 1, 1], [1, 1, 0]],
+        [[1, 1, 0], [0, 1, 1]],
+        [[1, 0, 0], [1, 1, 1]],
+        [[0, 0, 1], [1, 1, 1]],
     ]
-    # Liste des couleurs associées à chaque forme ci-dessus
-    COLORS = [CYAN, (255, 230, 0), (180, 0, 255), (50, 255, 50), (255, 50, 50), (50, 50, 255), (255, 150, 0)]
+    # couleurs
+    COLORS = [
+        MER,
+        SOLEIL,
+        ROSE,
+        VERT_PALM,
+        ROUGE_VIF,
+        (100, 180, 255),
+        ORANGE,
+    ]
 
-    # Paramètres de la grille : Largeur=10, Hauteur=18, Taille d'un Bloc (BS)=25 pixels
+    # variables globals (largeur grille, hauteur, taille block)
     LG, HG, BS = 10, 18, 25
-    # Position de départ  du plateau sur l'écran
-    XO, YO = 225, 25
+    XO, YO = 225, 25  # offset x et y
 
     def __init__(self):
-        self.reset()  # Initialise les variables du jeu au démarrage
+        self.reset()
 
     def reset(self):
-        # Crée une grille vide (HG lignes x LG colonnes) remplie de None
+        # init du tabeau principal vide
         self.grid = [[None] * self.LG for _ in range(self.HG)]
-        self.cur = self._new()  # Pièce actuelle
-        self.nxt = self._new()  # Pièce suivante
-        self.score = 0  # Score initial
-        self.level = 1  # Niveau de difficulté
-        self.lines = 0  # Nombre de lignes totales complétées
-        self.ft = 0  # Compteur de temps (Fall Timer)
-        self.game_over = False  # État de la partie
+        self.cur = self._new()  # piece actule
+        self.nxt = self._new()  # piece apres
+        self.score = 0
+        self.level = 1
+        self.lines = 0
+        self.ft = 0
+        self.game_over = False
 
     def _new(self):
-        # Choisit une forme au hasard et renvoie un dictionnaire avec ses propriétés
+        # genere nvl piece au pif
         i = random.randint(0, 6)
         return {'x': 3, 'y': 0, 'shape': self.SHAPES[i], 'color': self.COLORS[i]}
 
     def rotate(self, s):
-        # transpose la matrice et inverse les lignes pour une rotation de 90°
+        # opti: tourne la matrice avec zip
         return [list(r) for r in zip(*s[::-1])]
 
     def collide(self, dx=0, dy=0, shape=None):
-        # Vérifie si la pièce entre en collision avec les bords ou les blocs fixés
+        # fonction pour fix la hitbox
         s = shape or self.cur['shape']
         for r, row in enumerate(s):
             for c, v in enumerate(row):
-                if v:  # Si la case du n'est pas vide
-                    nx, ny = self.cur['x'] + c + dx, self.cur['y'] + r + dy  # Future position
-                    # Sortie des limites horizontales ou bas de grille
+                if v:  # si ya un bloc
+                    nx, ny = self.cur['x'] + c + dx, self.cur['y'] + r + dy
+                    # check murs gauche droite et bas
                     if nx < 0 or nx >= self.LG or ny >= self.HG: return True
-                    # Collision avec un bloc déjà présent dans la grille (si ny >= 0)
+                    # check block deja posé
                     if ny >= 0 and self.grid[ny][nx]: return True
         return False
 
     def ghost_y(self):
-        # Calcule la position "fantôme"
+        # simule la chute pour afficher lombre
         gy = self.cur['y']
         while not self.collide(dy=gy - self.cur['y'] + 1): gy += 1
         return gy
 
     def update(self, dt):
-        # Gère la descente automatique de la pièce en fonction du temps écoulé
         if self.game_over: return
         self.ft += dt
-        # Plus le niveau est élevé, plus le délai (500 - level * 40) court
+
+        # update de la vitesse (accelere selon le level)
         if self.ft > max(100, 500 - self.level * 40):
+            # si libre en dessous on descend de 1
             if not self.collide(dy=1):
-                self.cur['y'] += 1  # On descend d'une case
+                self.cur['y'] += 1
             else:
-                self._lock()  # Si collision en bas, on fixe la pièce
+                # sinon on merge avec le decor
+                self._lock()
             self.ft = 0
 
     def _lock(self):
-        # Fixe la pièce actuelle dans la grille permanente
+        # fige la map
         for r, row in enumerate(self.cur['shape']):
             for c, v in enumerate(row):
                 if v:
                     yp = self.cur['y'] + r
-                    if yp < 0:  # Si on fixe une pièce au-dessus du bord haut = perdu
-                        self.game_over = True;
+                    # si ca bloque hors ecran = dead
+                    if yp < 0:
+                        self.game_over = True
                         return
                     self.grid[yp][self.cur['x'] + c] = self.cur['color']
-        self._clear()  # Vérifie si des lignes sont complètes
-        self.cur = self.nxt  # La pièce suivante devient l'actuelle
-        self.nxt = self._new()  # On en génère une nouvelle
-        if self.collide(): self.game_over = True  # Si la nouvelle pièce est déjà bloquée = perdu
+
+        self._clear()  # pete les lignes
+        self.cur = self.nxt
+        self.nxt = self._new()
+        # respawn dans un mur
+        if self.collide(): self.game_over = True
 
     def _clear(self):
-        # Identifie et supprime les lignes pleines
+        # check ligne pleine
         full = [i for i, row in enumerate(self.grid) if all(row)]
         for i in full:
-            del self.grid[i]  # Supprime la ligne
-            self.grid.insert(0, [None] * self.LG)  # Ajoute une ligne vide en haut
+            # supprime la ligne
+            del self.grid[i]
+            # decale tout vers le bas en addant une liste None en haut
+            self.grid.insert(0, [None] * self.LG)
+
         if full:
             self.lines += len(full)
-            # Calcul du score : bonus selon le nombre de lignes simultanées
+            # calcul des pts
             self.score += [0, 100, 300, 500, 800][len(full)] * self.level
-            self.level = self.lines // 10 + 1  # Monte de niveau toutes les 10 lignes
+            self.level = self.lines // 10 + 1
 
     def _blk(self, surf, x, y, color):
-        # Dessine un carré (bloc) avec une bordure blanche
+        # helper pour afficher 1 seul carre de tetris
         r = (self.XO + x * self.BS, self.YO + y * self.BS, self.BS, self.BS)
-        pygame.draw.rect(surf, color, r)
-        pygame.draw.rect(surf, BLANC, r, 1)
+        pygame.draw.rect(surf, color, r, border_radius=3)
+        # petit filtre blanc en haut a gauche pour l'effet 3d vitre
+        highlight = tuple(min(255, c + 60) for c in color)
+        pygame.draw.rect(surf, highlight, (r[0] + 2, r[1] + 2, 6, 6))
+        pygame.draw.rect(surf, (0, 0, 0), r, 1, border_radius=3)
 
     def draw(self, surf):
-        # Dessine le plateau de jeu
-        board = (self.XO, self.YO, self.LG * self.BS, self.HG * self.BS)
-        pygame.draw.rect(surf, (15, 15, 25), board)  # Fond du plateau
-        pygame.draw.rect(surf, (50, 50, 80), board, 2)  # Bordure du plateau
+        # fct d'affichage frame
+        t = pygame.time.get_ticks() / 1000.0
+        draw_game_bg(surf)
 
-        # 1. Dessine les blocs déjà fixés dans la grille
+        # decor vagues
+        draw_wave_line(surf, self.YO + self.HG * self.BS + 4, t)
+
+        # map principal
+        board = (self.XO, self.YO, self.LG * self.BS, self.HG * self.BS)
+        bg = pygame.Surface((self.LG * self.BS, self.HG * self.BS), pygame.SRCALPHA)
+        bg.fill((0, 40, 80, 140))  # filtre sombre
+        surf.blit(bg, (self.XO, self.YO))
+        pygame.draw.rect(surf, SABLE, board, 2)
+
+        # affichage des trais de la grille
+        for x in range(self.LG + 1):
+            pygame.draw.line(surf, (0, 60, 100), (self.XO + x * self.BS, self.YO),
+                             (self.XO + x * self.BS, self.YO + self.HG * self.BS))
+        for y in range(self.HG + 1):
+            pygame.draw.line(surf, (0, 60, 100), (self.XO, self.YO + y * self.BS),
+                             (self.XO + self.LG * self.BS, self.YO + y * self.BS))
+
+        # affichage pieces figees
         for y, row in enumerate(self.grid):
             for x, c in enumerate(row):
                 if c: self._blk(surf, x, y, c)
 
-        # 2. Dessine le "fantome"
+        # affichage du pseudo fantome en bas
         gy = self.ghost_y()
         for r, row in enumerate(self.cur['shape']):
             for c, v in enumerate(row):
                 if v:
-                    rect = (self.XO + (self.cur['x'] + c) * self.BS, self.YO + (gy + r) * self.BS, self.BS, self.BS)
-                    pygame.draw.rect(surf, (38, 38, 48), rect, 1)  # Juste un contour gris sombre
+                    rect = (self.XO + (self.cur['x'] + c) * self.BS,
+                            self.YO + (gy + r) * self.BS, self.BS, self.BS)
+                    ghost = pygame.Surface((self.BS, self.BS), pygame.SRCALPHA)
+                    ghost.fill((*self.cur['color'], 50))  # 50 = alpha
+                    surf.blit(ghost, rect[:2])
+                    pygame.draw.rect(surf, (*self.cur['color'], 100), rect, 1)
 
-        # 3. Dessine la pièce active
+        # piece qui tombe
         for r, row in enumerate(self.cur['shape']):
             for c, v in enumerate(row):
                 if v: self._blk(surf, self.cur['x'] + c, self.cur['y'] + r, self.cur['color'])
 
-        # INTERFACE
-        # Affichage du texte "NEXT" et du cadre pour la pièce suivante
-        surf.blit(font_pixel.render("NEXT", True, BLANC), (self.XO + 270, self.YO))
-        pygame.draw.rect(surf, (20, 20, 30), (self.XO + 270, self.YO + 30, 100, 100))
+
+        nx_x = self.XO + self.LG * self.BS + 14
+        draw_wood_panel(surf, (nx_x, self.YO, 110, 110), radius=6)
+        lbl = font_small.render("SUIVANT", True, BRUN)
+        surf.blit(lbl, (nx_x + 55 - lbl.get_width() // 2, self.YO + 6))
+
+        # dessine le mini block next
         for r, row in enumerate(self.nxt['shape']):
             for c, v in enumerate(row):
-                if v:  # Dessine la pièce suivante en miniature
+                if v:
                     pygame.draw.rect(surf, self.nxt['color'],
-                                     (self.XO + 285 + c * 20, self.YO + 50 + r * 20, 18, 18))
+                                     (nx_x + 20 + c * 22, self.YO + 30 + r * 22, 20, 20), border_radius=3)
+                    h = tuple(min(255, x + 50) for x in self.nxt['color'])
+                    pygame.draw.rect(surf, h, (nx_x + 20 + c * 22 + 2, self.YO + 30 + r * 22 + 2, 5, 5))
 
-        # Affichage du Score et du Niveau à gauche
-        surf.blit(font_pixel.render(f"SCORE:{self.score}", True, JAUNE), (self.XO - 180, self.YO + 50))
-        surf.blit(font_pixel.render(f"LEVEL:{self.level}", True, CYAN), (self.XO - 180, self.YO + 80))
+        # score/stats
+        draw_wood_panel(surf, (nx_x, self.YO + 120, 110, 70), radius=6)
+        sc = font_small.render(f"SCORE", True, BRUN2)
+        surf.blit(sc, (nx_x + 10, self.YO + 126))
+        sv = font_pixel.render(str(self.score), True, BRUN)
+        surf.blit(sv, (nx_x + 10, self.YO + 142))
+        lv = font_small.render(f"LEVEL {self.level}", True, BRUN2)
+        surf.blit(lv, (nx_x + 10, self.YO + 162))
 
-        # Message de fin de partie
+        # Tuto inputs
+        draw_wood_panel(surf, (nx_x, self.YO + 200, 110, 80), radius=6)
+        for i, line in enumerate(["↑ Rotation", "<- -> Depl.", "↓ Rapide", "ESPACE Drop"]):
+            ct = font_small.render(line, True, BRUN2)
+            surf.blit(ct, (nx_x + 6, self.YO + 208 + i * 17))
+
         if self.game_over:
-            msg = font_main.render("GAME OVER – ESC", True, JOYCON_ROUGE)
-            surf.blit(msg, (self.XO - 60, self.HG * self.BS // 2))
-
-
+            draw_game_over(surf, font_main)

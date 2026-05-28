@@ -1,15 +1,15 @@
 {
-  "player_name": "la copie",
+  "player_name": "snake",
   "skin": "hero_white_f",
-  "map": "hermite_0",
+  "map": "map_0",
   "position": [
-    264,
-    48
+    744,
+    160
   ],
   "highscores": {
     "tetris": 0,
     "pacman": 0,
-    "snake": 180,
+    "snake": 30,
     "space": 0
   }
 }

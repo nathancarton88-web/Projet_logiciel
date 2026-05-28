@@ -1,15 +1,15 @@
 {
-  "player_name": "rrrrrrrrrr",
+  "player_name": "pacman",
   "skin": "hero_white_f",
   "map": "map_0",
   "position": [
-    1368,
-    320
+    1447,
+    592
   ],
   "highscores": {
-    "tetris": 1500,
+    "tetris": 0,
     "pacman": 0,
-    "snake": 310,
-    "space": 300
+    "snake": 0,
+    "space": 0
   }
 }

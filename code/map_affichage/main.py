@@ -18,7 +18,7 @@ def main():
         game = Game(save_data)
         game.run()
         # Si game.run() retourne, c'est soit fermeture fenêtre soit retour menu
-        # → on repart au début de la boucle while
+        # on repart au début de la boucle while
 
     pygame.quit()
 

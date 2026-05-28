@@ -1,92 +1,90 @@
-import pygame
+# player.py
+# Gere le perso principal (mouvements, collisions, surf, et le menu pause)
 
+
+import pygame
 from entity import Entity, MODE_WALK, MODE_BIKE, MODE_RUN, MODE_SURF
 from keylistener import KeyListener
 from screen import Screen
 from change import Change
 
-# ── Couleurs menu ingame ──────────────────────────────────────────────────────
-_NOIR   = (4,   4,  12)
-_BLANC  = (255, 255, 255)
-_CYAN   = (0,   220, 255)
-_JAUNE  = (255, 220,   0)
-_GRIS   = (120, 120, 140)
-_PANEL  = (18,  18,  28)
-_BORD   = (50,  50,  80)
-_ROUGE  = (255,  60,  50)
 
-_f_title = None
-_f_mid   = None
-_f_small = None
+SABLE      = (255, 210, 100)
+SABLE_F    = (200, 150,  70)
+MER        = (  0, 180, 200)
+SOLEIL     = (255, 220,  50)
+ORANGE     = (255, 140,   0)
+MARRON     = ( 60,  30,   0)
+MARRON_C   = (100,  60,  20)
+BLANC      = (255, 248, 220)
+ROUGE_VIF  = (255,  70,  50)
+VERT_PALM  = ( 60, 200,  80)
 
-def _get_fonts():
-    global _f_title, _f_mid, _f_small
-    if _f_title is None:
+# Variables globales pour les fonts
+font_titre = None
+font_mid   = None
+font_small = None
+
+def load_fonts_player():
+    global font_titre, font_mid, font_small
+    if font_titre is None:
         try:
-            _f_title = pygame.font.SysFont("Consolas", 28, bold=True)
-            _f_mid   = pygame.font.SysFont("Consolas", 20, bold=True)
-            _f_small = pygame.font.SysFont("Consolas", 16)
-        except Exception:
-            _f_title = pygame.font.Font(None, 32)
-            _f_mid   = pygame.font.Font(None, 24)
-            _f_small = pygame.font.Font(None, 20)
-# Libellés des jeux pour l'affichage
-_GAME_LABELS = {
-    "tetris": "TETRIS FOREVER",
-    "pacman": "PAC-MAN NEON",
-    "snake":  "SNAKE NEON",
-    "space":  "SPACE INVADERS",
+            font_titre = pygame.font.SysFont("Courier New", 26, bold=True)
+            font_mid   = pygame.font.SysFont("Courier New", 18, bold=True)
+            font_small = pygame.font.SysFont("Courier New", 14)
+        except Exception as e:
+            print("erreur font player:", e)
+            font_titre = pygame.font.Font(None, 30)
+            font_mid   = pygame.font.Font(None, 22)
+            font_small = pygame.font.Font(None, 18)
+
+# Noms des jeux pour l'UI
+LABELS_JEUX = {
+    "tetris": "TETRIS au soleil",
+    "pacman": "PAC-MAN a la playa",
+    "snake":  "SNAKE de plage",
+    "space":  "PLAGE invaders",
 }
 
 
 class Player(Entity):
-    def __init__(self, keylistener: KeyListener, screen: Screen, x: int, y: int):
+    def __init__(self, keylistener, screen, x, y):
         super().__init__(keylistener, screen, x, y)
-        self.pokedollars: int = 0
+        self.pokedollars = 0 # ptet a virer si on s'en sert pas
 
-        # Chemins surf / run (pour le skin sélectionné, injectés par game.py)
-        # Les spritesheets sont déjà chargés dans Entity via SKIN_RUN / SKIN_SURF
+        self.change = None
+        self.collisions = None
+        self.zones_eau = []   # liste des rects d'eau pour declencher le surf
+        self.change_map = None
+        self.jeu_proche = None
 
-        self.change:       list[Change] | None = None
-        self.collisions:   list[pygame.Rect] | None = None
-        self.water_zones:  list[pygame.Rect] = []   # zones déclenchant le surf
-        self.change_map:   Change | None = None
-        self.nearby_game:  str | None = None
+        # Setup menu pause
+        self.menu_ouvert = False
+        self.menu_index = 0
+        self.options_menu = ["Scores", "Quitter vers menu", "Fermer"]
+        self._highscores = {}   # recupéré depuis game.py
 
-        # ── Menu ingame ───────────────────────────────────────────────────────
-        self.show_menu:    bool  = False
-        self.menu_sel:     int   = 0
-        self._menu_opts    = ["Scores", "Quitter vers menu", "Fermer"]
-        self._highscores:  dict  = {}   # injecté par game.py
+        self.est_sur_eau = False
 
-        # ── Surf ──────────────────────────────────────────────────────────────
-        self._on_water:    bool  = False
-
-    # ══════════════════════════════════════════════════════════════════════════
-    # Update
-    # ══════════════════════════════════════════════════════════════════════════
-
-    def update(self) -> None:
-        if not self.show_menu:
-            self.check_input()
-            self.check_move()
+    def update(self):
+        # on bouge pas si le menu est affiché
+        if not self.menu_ouvert:
+            self.gestion_touches()
+            self.gestion_mouvements()
         super().update()
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # Input
-    # ══════════════════════════════════════════════════════════════════════════
 
-    def check_input(self) -> None:
-        # Vélo : B
+    def gestion_touches(self):
+        # Velo = B
         if self.keylistener.key_pressed(pygame.K_b):
             if self.mode == MODE_BIKE:
                 self.switch_walk()
             elif self.mode == MODE_WALK or self.mode == MODE_RUN:
                 self.switch_bike()
-                self.switch_run(deactive=True)  # désactive run si actif
+                self.switch_run(deactive=True)  #  plus de course si on courrait
             self.keylistener.remove_key(pygame.K_b)
 
-        # Course : R  (seulement hors eau, hors vélo)
+        # Courir = R (marche pas dans l'eau ni a velo)
         if self.keylistener.key_pressed(pygame.K_r):
             if self.mode == MODE_RUN:
                 self.switch_walk()
@@ -94,210 +92,255 @@ class Player(Entity):
                 self.switch_run()
             self.keylistener.remove_key(pygame.K_r)
 
-        # Surf : S  (seulement si sur une zone eau)
+        # Surf = S (check zone eau d'abord)
         if self.keylistener.key_pressed(pygame.K_s):
             if self.mode == MODE_SURF:
                 self.switch_walk()
-            elif self._on_water and self.mode == MODE_WALK:
+            elif self.est_sur_eau and self.mode == MODE_WALK:
                 self.switch_surf()
             self.keylistener.remove_key(pygame.K_s)
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # Mouvement & déclencheurs
-    # ══════════════════════════════════════════════════════════════════════════
 
-    def check_move(self) -> None:
-        self.nearby_game = None
-        self._on_water   = self._check_water(self.hitbox)
+    def gestion_mouvements(self):
+        self.jeu_proche = None
+        self.est_sur_eau = self.check_flotte(self.hitbox)
 
-        # Si on quitte l'eau sans être en surf → retour marche
-        if not self._on_water and self.mode == MODE_SURF:
+        # bugfix: si on sort de l'eau en surfant ca remet a pied automatiquement
+        if not self.est_sur_eau and self.mode == MODE_SURF:
             self.switch_walk()
 
         if self.animation_walk:
             return
 
+        # copie la hitbox pour tester la collision avant de bouger le vrai perso
         temp_hitbox = self.hitbox.copy()
 
+        # Vitesse
         if self.keylistener.key_pressed(pygame.K_LEFT):
             temp_hitbox.x -= 16
-            if not self.check_collisions(temp_hitbox):
-                self._check_triggers(temp_hitbox)
+            if not self.verif_collisions(temp_hitbox):
+                self.check_triggers(temp_hitbox)
                 self.move_left()
             else:
                 self.direction = "left"
 
         elif self.keylistener.key_pressed(pygame.K_RIGHT):
             temp_hitbox.x += 16
-            if not self.check_collisions(temp_hitbox):
-                self._check_triggers(temp_hitbox)
+            if not self.verif_collisions(temp_hitbox):
+                self.check_triggers(temp_hitbox)
                 self.move_right()
             else:
                 self.direction = "right"
 
         elif self.keylistener.key_pressed(pygame.K_UP):
             temp_hitbox.y -= 16
-            if not self.check_collisions(temp_hitbox):
-                self._check_triggers(temp_hitbox)
+            if not self.verif_collisions(temp_hitbox):
+                self.check_triggers(temp_hitbox)
                 self.move_up()
             else:
                 self.direction = "up"
 
         elif self.keylistener.key_pressed(pygame.K_DOWN):
             temp_hitbox.y += 16
-            if not self.check_collisions(temp_hitbox):
-                self._check_triggers(temp_hitbox)
+            if not self.verif_collisions(temp_hitbox):
+                self.check_triggers(temp_hitbox)
                 self.move_down()
             else:
                 self.direction = "down"
 
         else:
-            self._check_proximity(self.hitbox.inflate(8, 8))
+            # check si on est a coté d'un batiment arcade meme sans bouger
+            self.check_proximite(self.hitbox.inflate(8, 8))
 
-    # ── Détection eau ─────────────────────────────────────────────────────────
 
-    def _check_water(self, hb: pygame.Rect) -> bool:
-        for z in self.water_zones:
+    def check_flotte(self, hb):
+        for z in self.zones_eau:
             if hb.colliderect(z):
                 return True
         return False
 
-    # ── Déclencheurs ──────────────────────────────────────────────────────────
 
-    def _check_triggers(self, temp_hitbox: pygame.Rect) -> None:
-        if not self.change:
-            return
-        for trigger in self.change:
-            if trigger.check_collision(temp_hitbox):
-                if trigger.type == "switch":
-                    self.change_map = trigger
-                elif trigger.type == "game":
-                    self.nearby_game = trigger.name
+    def check_triggers(self, hitbox_test):
+        if not self.change: return
+        
+        for zone in self.change:
+            if zone.check_collision(hitbox_test):
+                # trigger de changement de map (les portes)
+                if zone.type == "switch":
+                    self.change_map = zone
+                # trigger pour jouer a une borne
+                elif zone.type == "game":
+                    self.jeu_proche = zone.name
 
-    def _check_proximity(self, probe: pygame.Rect) -> None:
-        if not self.change:
-            return
-        for trigger in self.change:
-            if trigger.type == "game" and trigger.check_collision(probe):
-                self.nearby_game = trigger.name
+    def check_proximite(self, zone_test):
+        if not self.change: return
+        for t in self.change:
+            if t.type == "game" and t.check_collision(zone_test):
+                self.jeu_proche = t.name
                 return
 
-    # ── Collisions ────────────────────────────────────────────────────────────
 
-    def add_switchs(self, change: list[Change]) -> None:
-        self.change = change
+    def add_switchs(self, lst_change):
+        self.change = lst_change
 
-    def add_collisions(self, collisions: list[pygame.Rect]) -> None:
-        self.collisions = collisions
+    def add_collisions(self, lst_collisions):
+        self.collisions = lst_collisions
 
-    def add_water_zones(self, zones: list[pygame.Rect]) -> None:
-        self.water_zones = zones
+    def add_water_zones(self, zones):
+        self.zones_eau = zones
 
-    def check_collisions(self, temp_hitbox: pygame.Rect) -> bool:
-        # En mode surf, on ignore les collisions des zones eau
-        for collision in self.collisions:
-            if temp_hitbox.colliderect(collision):
-                # Si c'est une zone eau et qu'on surfe, pas de collision
-                if self.mode == MODE_SURF and self._check_water(temp_hitbox):
+    def verif_collisions(self, hitbox_test):
+        # Si on surfe, on ignore completement les blocs d'eau pour pouvoir avancer dedans
+        for col in self.collisions:
+            if hitbox_test.colliderect(col):
+                if self.mode == MODE_SURF and self.check_flotte(hitbox_test):
                     continue
                 return True
         return False
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # Menu ingame  (START / Echap ingame)
-    # ══════════════════════════════════════════════════════════════════════════
 
-    def open_menu(self) -> None:
-        self.show_menu = True
-        self.menu_sel  = 0
 
-    def close_menu(self) -> None:
-        self.show_menu = False
+   # Menu (Touche M ou START)
 
-    def menu_up(self) -> None:
-        self.menu_sel = (self.menu_sel - 1) % len(self._menu_opts)
 
-    def menu_down(self) -> None:
-        self.menu_sel = (self.menu_sel + 1) % len(self._menu_opts)
+    def open_menu(self):
+        self.menu_ouvert = True
+        self.menu_index = 0
 
-    def menu_confirm(self) -> str:
-        """Retourne l'action choisie : 'scores' | 'quit_menu' | 'close'"""
-        choice = self._menu_opts[self.menu_sel]
-        if choice == "Scores":
-            return "scores"
-        elif choice == "Quitter vers menu":
-            return "quit_menu"
+    def close_menu(self):
+        self.menu_ouvert = False
+
+    def menu_up(self):
+        self.menu_index = (self.menu_index - 1) % len(self.options_menu)
+
+    def menu_down(self):
+        self.menu_index = (self.menu_index + 1) % len(self.options_menu)
+
+    def menu_confirm(self):
+        choix = self.options_menu[self.menu_index]
+        if choix == "Scores": return "scores"
+        elif choix == "Quitter vers menu": return "quit_menu"
         else:
             self.close_menu()
             return "close"
 
-    def draw_ingame_menu(self, display: pygame.Surface, highscores: dict) -> None:
-        """Dessine le menu pause par-dessus l'écran."""
-        _get_fonts()
-        W, H = display.get_size()
+    def draw_ingame_menu(self, surface, highscores):
+        import math
+        load_fonts_player()
+        W, H = surface.get_size()
+        t = pygame.time.get_ticks() / 1000.0
 
-        # Fond semi-transparent
-        overlay = pygame.Surface((W, H), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 160))
-        display.blit(overlay, (0, 0))
+        # Filtre sombre arriere plan
+        calque = pygame.Surface((W, H), pygame.SRCALPHA)
+        calque.fill((20, 10, 0, 150))
+        surface.blit(calque, (0, 0))
 
-        # Panneau central
-        pw, ph = 460, 380
+        # Panneau central en bois
+        pw, ph = 480, 400
         px, py = W // 2 - pw // 2, H // 2 - ph // 2
-        pygame.draw.rect(display, _PANEL,  (px, py, pw, ph), border_radius=10)
-        pygame.draw.rect(display, _CYAN,   (px, py, pw, ph), 2, border_radius=10)
 
-        # Titre style console rétro
-        title = _f_title.render("══  MENU  ══", True, _CYAN)
-        display.blit(title, (px + pw // 2 - title.get_width() // 2, py + 18))
-        pygame.draw.line(display, _BORD, (px + 20, py + 56), (px + pw - 20, py + 56), 1)
+        # Ombre 
+        ombre = pygame.Surface((pw + 10, ph + 10), pygame.SRCALPHA)
+        ombre.fill((0, 0, 0, 80))
+        surface.blit(ombre, (px + 7, py + 7))
 
-        # ── Scores ────────────────────────────────────────────────────────────
-        sy = py + 70
-        hs_label = _f_mid.render("[ MEILLEURS SCORES ]", True, _JAUNE)
-        display.blit(hs_label, (px + pw // 2 - hs_label.get_width() // 2, sy))
-        sy += 30
+        pygame.draw.rect(surface, (210, 160, 75), (px, py, pw, ph), border_radius=10)
+        
+        # deco lignes bois
+        for i in range(8):
+            lx = px + 10 + i * (pw - 20) // 8
+            pygame.draw.line(surface, (190, 140, 60), (lx, py + 8), (lx, py + ph - 8), 1)
+            
+        pygame.draw.rect(surface, (150, 100, 35), (px, py, pw, ph), 3, border_radius=10)
+        
+        # les ptits clous
+        for cx, cy in [(px+14, py+14), (px+pw-14, py+14), (px+14, py+ph-14), (px+pw-14, py+ph-14)]:
+            pygame.draw.circle(surface, (120, 80, 30), (cx, cy), 6)
+            pygame.draw.circle(surface, (220, 180, 100), (cx-1, cy-1), 3)
 
-        for gid, label in _GAME_LABELS.items():
-            score = highscores.get(gid, 0)
-            bar_w = min(int(score / 10), pw - 80)   # barre proportionnelle (max 10 000)
-            # Fond barre
-            pygame.draw.rect(display, (30, 30, 50), (px + 30, sy + 18, pw - 60, 10), border_radius=4)
-            # Barre remplie
-            color = [_CYAN, _JAUNE, (100, 255, 100), (255, 100, 100)][list(_GAME_LABELS).index(gid)]
-            if bar_w > 0:
-                pygame.draw.rect(display, color, (px + 30, sy + 18, bar_w, 10), border_radius=4)
-            # Texte
-            line = _f_small.render(f"{label:<20} {score:>6} pts", True, _BLANC)
-            display.blit(line, (px + 30, sy))
-            sy += 34
+        # Header menu
+        pygame.draw.rect(surface, (180, 110, 40), (px + 20, py + 14, pw - 40, 34), border_radius=5)
+        titre = font_titre.render("~  MENU  ~", True, BLANC)
+        surface.blit(titre, (px + pw // 2 - titre.get_width() // 2, py + 18))
 
-        pygame.draw.line(display, _BORD, (px + 20, sy + 4), (px + pw - 20, sy + 4), 1)
-        sy += 14
+        for x in range(px + 20, px + pw - 20, 5):
+            dy = int(2 * math.sin(x * 0.08 + t * 2))
+            pygame.draw.circle(surface, MER, (x, py + 54 + dy), 1)
 
-        # ── Options ───────────────────────────────────────────────────────────
-        for i, opt in enumerate(self._menu_opts):
-            selected = i == self.menu_sel
-            col  = _JAUNE if selected else _GRIS
-            prefix = "-> " if selected else "  "
-            txt  = _f_mid.render(prefix + opt, True, col)
-            if selected:
-                pygame.draw.rect(display, (30, 30, 55),
-                                 (px + 20, sy - 2, pw - 40, 26), border_radius=4)
-            display.blit(txt, (px + pw // 2 - txt.get_width() // 2, sy))
-            sy += 30
+        # Affichage du transport actuel en haut a droite
+        icones_mode = {
+            MODE_WALK: ("MARCHE", (60, 180, 80)),
+            MODE_BIKE: ("VELO",   (0, 180, 200)),
+            MODE_RUN:  ("COURSE", (255, 140, 0)),
+            MODE_SURF: ("SURF",   (0, 160, 220)),
+        }
+        if self.mode in icones_mode:
+            lbl, col = icones_mode[self.mode]
+            pygame.draw.rect(surface, col, (px + pw - 84, py + 16, 66, 22), border_radius=4)
+            txt_mode = font_small.render(lbl, True, BLANC)
+            # galere de ouf avec les coords pour centrer, pas toucher
+            surface.blit(txt_mode, (px + pw - 84 + 33 - txt_mode.get_width()//2, py + 20))
 
-        # Hint
-        hint = _f_small.render("↑ ↓  Naviguer   Entrée  Valider   Echap  Fermer",
-                                True, _GRIS)
-        display.blit(hint, (px + pw // 2 - hint.get_width() // 2, py + ph - 24))
+        # SCORES
+        y_score = py + 64
+        pygame.draw.rect(surface, (0, 160, 180), (px + pw//2 - 80, y_score, 160, 22), border_radius=4)
+        txt_hs = font_small.render("MEILLEURS SCORES", True, BLANC)
+        surface.blit(txt_hs, (px + pw//2 - txt_hs.get_width()//2, y_score + 3))
+        y_score += 30
 
-        # Indicateur de mode actuel
-        mode_txt = {
-            MODE_WALK: "[ MARCHE ]",
-            MODE_BIKE: "[ VELO   ]",
-            MODE_RUN:  "[ COURSE ]",
-            MODE_SURF: "[ SURF   ]",
-        }.get(self.mode, "")
-        ms = _f_small.render(mode_txt, True, _CYAN)
-        display.blit(ms, (px + pw - ms.get_width() - 14, py + 18))
+        couleurs_barres = [(0, 200, 220), (255, 200, 0), (80, 220, 100), (255, 100, 60)]
+        i = 0
+        for id_jeu, libelle in LABELS_JEUX.items():
+            pts = highscores.get(id_jeu, 0)
+            largeur_max = pw - 80
+            # on divise par 10 pour la width sinon ca deborde de la fenetre avec les gros scores 
+            w_barre = min(int(pts / 10), largeur_max) 
+            
+            pygame.draw.rect(surface, (170, 120, 50), (px + 24, y_score, pw - 48, 28), border_radius=4)
+            
+            txt_lbl = font_small.render(libelle, True, MARRON)
+            surface.blit(txt_lbl, (px + 30, y_score + 3))
+            
+            bx = px + 30
+            by = y_score + 17
+            pygame.draw.rect(surface, (150, 100, 40), (bx, by, pw - 60, 7), border_radius=3)
+            if w_barre > 0:
+                pygame.draw.rect(surface, couleurs_barres[i], (bx, by, w_barre, 7), border_radius=3)
+                
+            txt_pts = font_small.render(f"{pts} pts", True, MARRON)
+            surface.blit(txt_pts, (px + pw - txt_pts.get_width() - 30, y_score + 3))
+            
+            y_score += 34
+            i += 1
+
+        for x in range(px + 20, px + pw - 20, 5):
+            dy = int(2 * math.sin(x * 0.08 + t * 2 + 1.5))
+            pygame.draw.circle(surface, SABLE_F, (x, y_score + 6 + dy), 1)
+        y_score += 18
+
+        # BOUTONS MENU
+        couleurs_btn = [(255, 240, 180), (220, 248, 210), (255, 220, 210)]
+        bordures_btn = [(200, 140, 50),  (50, 160, 60),   (200, 80, 60)]
+        
+        for index, opt in enumerate(self.options_menu):
+            est_select = (index == self.menu_index)
+            w, h = pw - 48, 30
+            x_btn = px + 24
+            
+            if est_select:
+                sh2 = pygame.Surface((w, h), pygame.SRCALPHA)
+                sh2.fill((0, 0, 0, 40))
+                surface.blit(sh2, (x_btn + 3, y_score + 3))
+                
+            pygame.draw.rect(surface, couleurs_btn[index], (x_btn, y_score, w, h), border_radius=5)
+            epaisseur = 3 if est_select else 2
+            pygame.draw.rect(surface, bordures_btn[index], (x_btn, y_score, w, h), epaisseur, border_radius=5)
+            
+            prefix = ">> " if est_select else "   "
+            txt_opt = font_mid.render(prefix + opt, True, MARRON)
+            surface.blit(txt_opt, (x_btn + w//2 - txt_opt.get_width()//2, y_score + h//2 - txt_opt.get_height()//2))
+            
+            y_score += 36
+
+        info = font_small.render("↑↓ Naviguer   Entree Valider   Echap Fermer", True, MARRON_C)
+        surface.blit(info, (px + pw//2 - info.get_width()//2, py + ph - 22))

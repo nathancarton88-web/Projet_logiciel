@@ -1,15 +1,15 @@
 {
-  "player_name": "dkfk",
+  "player_name": "Tetris",
   "skin": "hero_white_f",
   "map": "map_0",
   "position": [
-    616,
-    608
+    1448,
+    641
   ],
   "highscores": {
-    "tetris": 0,
-    "pacman": 0,
+    "tetris": 2600,
+    "pacman": 1280,
     "snake": 0,
-    "space": 160
+    "space": 0
   }
 }
