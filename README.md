@@ -9,6 +9,7 @@ Mode d'emploi:
 installer les librairies pygame pyscroll et pytmx
 
 Sauvegarde automatique toute les 30 sec 
+
 Deplacement avec les flèches et teleportation en passant par les portail 
 
 E = lancement d'un mini jeux pret d'un des 4 grands batiments
