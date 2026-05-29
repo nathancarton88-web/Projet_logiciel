@@ -22,7 +22,7 @@ S = Surf pret d'une zone d'eau profonde bleu foncé
 
 Karim Glelah :Space Invaders, Intégration et Sauvegardes.
 
-Mohamed Hashem : Snake et Charte graphique (`ete_theme.py`).
+Mohamed Hashem : Snake et Charte graphique ete_theme.py.
 
 Tayeb Arroub : Tetris et Architecture des classes de jeu.
 
