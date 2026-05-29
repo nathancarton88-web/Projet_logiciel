@@ -3,7 +3,15 @@
 L'Île des Mini-Jeux
 
 Un Jeu alliant exploration 2D et arcade rétro. 
-À propos du projet
+Mode d'emploi:
+
+Sauvegarde automatique toute les 30 sec 
+Deplacement avec les flèches et teleportation en passant par les portail 
+
+E = lancement d'un mini jeux pret d'un des 4 grands batiments
+R = run 
+B = bike
+S = Surf pret d'une zone d'eau profonde bleu foncé 
 
 
 
@@ -11,7 +19,7 @@ Un Jeu alliant exploration 2D et arcade rétro.
 
 Équipe de Développement
 
-Ce projet logiciel a été réalisé pour IESE Polytech le 29 Mai 2026 par:
+
 Karim Glelah :Space Invaders, Intégration et Sauvegardes.
 
 Mohamed Hashem : Snake et Charte graphique (`ete_theme.py`).
