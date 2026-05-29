@@ -4,6 +4,7 @@ L'Île des Mini-Jeux
 
 Un Jeu alliant exploration 2D et arcade rétro. 
 Mode d'emploi:
+installer les librairies pygame pyscroll et pytmx
 
 Sauvegarde automatique toute les 30 sec 
 Deplacement avec les flèches et teleportation en passant par les portail 
