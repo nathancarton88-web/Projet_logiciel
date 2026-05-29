@@ -1,15 +1,15 @@
 {
-  "player_name": "chess",
+  "player_name": "hoss",
   "skin": "hero_white_f",
   "map": "map_0",
   "position": [
-    1448,
-    592
+    1464,
+    608
   ],
   "highscores": {
     "tetris": 0,
-    "pacman": 1040,
-    "snake": 210,
+    "pacman": 330,
+    "snake": 0,
     "space": 0
   }
 }

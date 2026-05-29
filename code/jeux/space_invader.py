@@ -274,7 +274,7 @@ class SpaceInvaders:
             draw_wood_panel(surf, (x + w // 2 - 22, y - 30, 44, 16), radius=4)
             surf.blit(font_small.render("BOSS", True, ROUGE_VIF), (x + w // 2 - 18, y - 28))
 
-        
+
         # notre bateau super en polygone
         px, py2 = self.px, self.py
         pygame.draw.polygon(surf, BOIS, [
@@ -303,7 +303,7 @@ class SpaceInvaders:
         draw_wood_panel(surf, (L_INTERNE - 150, 6, 144, 26), radius=5)
         surf.blit(font_small.render(f"VAGUE: {self.level}", True, BRUN), (L_INTERNE - 144, 10))
 
-        ht = font_small.render("← → deplacer   ESPACE tirer", True, SABLE)
+        ht = font_small.render("<- -> deplacer   ESPACE tirer", True, SABLE)
         surf.blit(ht, (L_INTERNE // 2 - ht.get_width() // 2, H_INTERNE - 18))
 
         if self.game_over:

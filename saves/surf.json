@@ -1,10 +1,10 @@
 {
-  "player_name": ",sql",
-  "skin": "hero_red_m",
+  "player_name": "surf",
+  "skin": "hero_white_f",
   "map": "map_0",
   "position": [
-    1016,
-    48
+    968,
+    576
   ],
   "highscores": {
     "tetris": 0,

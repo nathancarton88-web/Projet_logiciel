@@ -1,15 +1,15 @@
 {
-  "player_name": "space",
-  "skin": "hero_white_f",
+  "player_name": "plage invade",
+  "skin": "hero_red_m",
   "map": "map_0",
   "position": [
-    808,
-    768
+    824,
+    784
   ],
   "highscores": {
     "tetris": 0,
     "pacman": 0,
     "snake": 0,
-    "space": 0
+    "space": 160
   }
 }

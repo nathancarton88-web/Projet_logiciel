@@ -1,15 +1,15 @@
 {
   "player_name": "snake",
-  "skin": "hero_white_f",
+  "skin": "hero_red_m",
   "map": "map_0",
   "position": [
     744,
-    160
+    176
   ],
   "highscores": {
     "tetris": 0,
     "pacman": 0,
-    "snake": 30,
+    "snake": 20,
     "space": 0
   }
 }
